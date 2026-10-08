@@ -31,6 +31,7 @@ export function SideNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[15px] transition-colors",
@@ -63,6 +64,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] tracking-tight transition-colors",

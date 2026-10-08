@@ -26,7 +26,8 @@ function createClient() {
     max: 1,
     ssl: "require",
     connect_timeout: 8,
-    idle_timeout: 20,
+    idle_timeout: 60,
+    fetch_types: false,
   });
 }
 
