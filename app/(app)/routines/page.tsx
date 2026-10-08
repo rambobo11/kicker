@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { ListSkeleton } from "@/components/list-skeleton";
 import { RoutineScreen } from "@/components/routine-screen";
 import { ScreenHeader } from "@/components/screen-header";
-import { getRoutines } from "@/lib/queries";
+import { getRoutines } from "@/lib/data/routines";
 
 export default function RoutinesPage() {
   return (

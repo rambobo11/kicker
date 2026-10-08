@@ -71,7 +71,7 @@ export const gaugeClass: Record<GaugeTone, string> = {
 };
 
 export const gaugeTextClass: Record<GaugeTone, string> = {
-  fresh: "text-[#2f7d4e]",
-  soon: "text-[#b57422]",
-  overdue: "text-[#c44740]",
+  fresh: "text-[#2f7d4e] dark:text-[#8dcea8]",
+  soon: "text-[#b57422] dark:text-[#f0c27a]",
+  overdue: "text-[#c44740] dark:text-[#f0a8a4]",
 };

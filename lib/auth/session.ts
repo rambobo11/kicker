@@ -16,11 +16,7 @@ async function sign(secret: string, value: string) {
     false,
     ["sign"],
   );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(value),
-  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
   return bytesToBase64Url(signature);
 }
 
@@ -35,6 +31,16 @@ function sameString(left: string, right: string) {
   return mismatch === 0;
 }
 
+export function sessionCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "strict" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  };
+}
+
 export async function createSessionToken(secret: string, now = Date.now()) {
   const expiresAt = now + SESSION_MAX_AGE_SECONDS * 1000;
   const payload = `v1.${expiresAt}`;
@@ -43,9 +49,10 @@ export async function createSessionToken(secret: string, now = Date.now()) {
 }
 
 export async function verifySessionToken(token: string | undefined, secret: string) {
-  if (!token) return false;
+  if (!token || !secret) return false;
   const [version, expiresAt, signature] = token.split(".");
   if (version !== "v1" || !expiresAt || !signature) return false;
+  if (!/^\d{10,16}$/.test(expiresAt)) return false;
   if (Number(expiresAt) < Date.now()) return false;
   const expected = await sign(secret, `${version}.${expiresAt}`);
   return sameString(signature, expected);

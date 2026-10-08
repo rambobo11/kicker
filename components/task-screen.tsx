@@ -3,11 +3,12 @@
 import { Plus, Zap } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useOptimistic } from "react";
-import { addTask, completeTask } from "@/app/actions";
+import { addTask, completeTask } from "@/app/actions/tasks";
+import { SplitTask } from "@/components/split-task";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { CATEGORIES, categoryClass, type Category } from "@/lib/categories";
-import type { TaskView } from "@/lib/queries";
+import type { TaskView } from "@/lib/data/tasks";
 import { cn } from "cn";
 
 export function TaskScreen({
@@ -16,12 +17,14 @@ export function TaskScreen({
   emptyTitle,
   emptyBody,
   placeholder,
+  allowSplit = false,
 }: {
   tasks: TaskView[];
   microMode: "choice" | "locked";
   emptyTitle: string;
   emptyBody: string;
   placeholder: string;
+  allowSplit?: boolean;
 }) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>("Base Camp");
@@ -45,6 +48,7 @@ export function TaskScreen({
       title: nextTitle,
       category,
       isMicro,
+      parentId: null,
     };
     setTitle("");
     startTransition(async () => {
@@ -76,13 +80,13 @@ export function TaskScreen({
             placeholder={placeholder}
             aria-label="Nouvelle tâche"
             maxLength={180}
-            className="h-12 border-0 bg-transparent px-0 text-[17px] shadow-none focus-visible:ring-0 md:text-[17px] placeholder:text-[#b7b2aa]"
+            className="h-12 border-0 bg-transparent px-0 text-[17px] shadow-none focus-visible:ring-0 md:text-[17px] placeholder:text-muted-foreground"
           />
           <button
             type="submit"
             disabled={pending || title.trim().length === 0}
             aria-label="Ajouter la tâche"
-            className="grid size-11 shrink-0 place-items-center rounded-full bg-foreground text-background transition-colors disabled:bg-[#d9d4cc]"
+            className="grid size-11 shrink-0 place-items-center rounded-full bg-foreground text-background transition-colors disabled:bg-muted"
           >
             <Plus className="size-5" />
           </button>
@@ -100,7 +104,7 @@ export function TaskScreen({
                 onClick={() => setCategory(item)}
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-[13px] transition-colors",
-                  selected ? "bg-foreground text-background" : "bg-white text-muted-foreground",
+                  selected ? "bg-foreground text-background" : "bg-card text-muted-foreground",
                 )}
               >
                 {item}
@@ -114,7 +118,7 @@ export function TaskScreen({
               onClick={() => setIsMicro((value) => !value)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] transition-colors",
-                isMicro ? "bg-foreground text-background" : "bg-white text-muted-foreground",
+                isMicro ? "bg-foreground text-background" : "bg-card text-muted-foreground",
               )}
             >
               <Zap className="size-3.5" />
@@ -137,28 +141,35 @@ export function TaskScreen({
       ) : (
         <ul className="flex flex-col">
           {optimisticTasks.map((task) => (
-            <li key={task.id} className="flex items-start gap-3.5 border-b border-black/5 py-4 last:border-b-0">
-              <Checkbox
-                checked={false}
-                disabled={pending}
-                onCheckedChange={() => complete(task.id)}
-                aria-label={`Terminer ${task.title}`}
-                className="mt-0.5 size-[22px] rounded-full border-[#d7d2cb] bg-transparent"
-              />
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => complete(task.id)}
-                className="min-w-0 flex-1 text-left disabled:opacity-100"
-              >
-                <span className="block text-[17px] leading-snug tracking-[-0.01em]">{task.title}</span>
-              </button>
-              <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-                <span className={cn("text-[12px]", categoryClass[task.category])}>{task.category}</span>
-                {task.isMicro ? (
-                  <span className="text-[11px] text-muted-foreground">5 min</span>
-                ) : null}
+            <li key={task.id} className="border-b border-border py-4 last:border-b-0">
+              <div className="flex items-start gap-3.5">
+                <Checkbox
+                  checked={false}
+                  disabled={pending}
+                  onCheckedChange={() => complete(task.id)}
+                  aria-label={`Terminer ${task.title}`}
+                  className="mt-0.5 size-[22px] rounded-full border-border bg-transparent"
+                />
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => complete(task.id)}
+                  className="min-w-0 flex-1 text-left disabled:opacity-100"
+                >
+                  <span className="block text-[17px] leading-snug tracking-[-0.01em]">{task.title}</span>
+                </button>
+                <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
+                  <span className={cn("text-[12px]", categoryClass[task.category])}>{task.category}</span>
+                  {task.isMicro ? (
+                    <span className="text-[11px] text-muted-foreground">5 min</span>
+                  ) : null}
+                </div>
               </div>
+              {allowSplit && !task.isMicro ? (
+                <div className="mt-2 pl-[36px]">
+                  <SplitTask taskId={task.id} />
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>

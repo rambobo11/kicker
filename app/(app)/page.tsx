@@ -1,29 +1,21 @@
 import { Suspense } from "react";
 import { ListSkeleton } from "@/components/list-skeleton";
 import { ScreenHeader } from "@/components/screen-header";
-import { TaskScreen } from "@/components/task-screen";
-import { getActiveTasks } from "@/lib/queries";
+import { StartScreen } from "@/components/start-screen";
+import { getStartScreen } from "@/lib/data/start";
 
-export default function BrainDumpPage() {
+export default function StartPage() {
   return (
     <>
-      <ScreenHeader title="Brain dump" hint="Ce qui traverse l'esprit." />
+      <ScreenHeader title="Par où je commence" hint="Une seule chose." />
       <Suspense fallback={<ListSkeleton />}>
-        <BrainDump />
+        <Start />
       </Suspense>
     </>
   );
 }
 
-async function BrainDump() {
-  const tasks = await getActiveTasks(false);
-  return (
-    <TaskScreen
-      tasks={tasks}
-      microMode="choice"
-      placeholder="Une idée, une tâche…"
-      emptyTitle="L'esprit est clair."
-      emptyBody="La prochaine idée a un endroit où atterrir."
-    />
-  );
+async function Start() {
+  const { queue, routine } = await getStartScreen();
+  return <StartScreen queue={queue} routine={routine} />;
 }

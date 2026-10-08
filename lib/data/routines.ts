@@ -1,15 +1,8 @@
-import { and, desc, eq } from "drizzle-orm";
-import { routines, tasks } from "@/db/schema";
-import { db } from "@/lib/db";
+import "server-only";
+import { routines } from "@/db/schema";
 import type { Category } from "@/lib/categories";
+import { getDb } from "@/lib/db";
 import { routineGauge, urgencyScore } from "@/lib/gauge";
-
-export type TaskView = {
-  id: string;
-  title: string;
-  category: Category;
-  isMicro: boolean;
-};
 
 export type RoutineView = {
   id: string;
@@ -27,27 +20,8 @@ function intervalLabel(intervalDays: number) {
   return intervalDays === 1 ? "Tous les jours" : `Tous les ${intervalDays} jours`;
 }
 
-export async function getActiveTasks(microOnly: boolean): Promise<TaskView[]> {
-  const rows = await db
-    .select()
-    .from(tasks)
-    .where(
-      microOnly
-        ? and(eq(tasks.isCompleted, false), eq(tasks.isMicro, true))
-        : eq(tasks.isCompleted, false),
-    )
-    .orderBy(desc(tasks.createdAt));
-
-  return rows.map((task) => ({
-    id: task.id,
-    title: task.title,
-    category: task.category,
-    isMicro: task.isMicro,
-  }));
-}
-
 export async function getRoutines(): Promise<RoutineView[]> {
-  const rows = await db.select().from(routines);
+  const rows = await getDb().select().from(routines);
   const now = Date.now();
 
   return rows

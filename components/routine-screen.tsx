@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { useOptimistic, useState, useTransition } from "react";
-import { addRoutine, completeRoutine } from "@/app/actions";
+import { addRoutine, completeRoutine } from "@/app/actions/routines";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import {
   type IntervalDays,
 } from "@/lib/categories";
 import { gaugeClass, gaugeTextClass } from "@/lib/gauge";
-import type { RoutineView } from "@/lib/queries";
+import type { RoutineView } from "@/lib/data/routines";
 import { cn } from "cn";
 
 export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
@@ -96,13 +96,13 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
             placeholder="Une routine d'entretien…"
             aria-label="Nouvelle routine"
             maxLength={180}
-            className="h-12 border-0 bg-transparent px-0 text-[17px] shadow-none focus-visible:ring-0 md:text-[17px] placeholder:text-[#b7b2aa]"
+            className="h-12 border-0 bg-transparent px-0 text-[17px] shadow-none focus-visible:ring-0 md:text-[17px] placeholder:text-muted-foreground"
           />
           <button
             type="submit"
             disabled={pending || title.trim().length === 0}
             aria-label="Ajouter la routine"
-            className="grid size-11 shrink-0 place-items-center rounded-full bg-foreground text-background transition-colors disabled:bg-[#d9d4cc]"
+            className="grid size-11 shrink-0 place-items-center rounded-full bg-foreground text-background transition-colors disabled:bg-muted"
           >
             <Plus className="size-5" />
           </button>
@@ -119,7 +119,7 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
                 onClick={() => setCategory(item)}
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-[13px] transition-colors",
-                  selected ? "bg-foreground text-background" : "bg-white text-muted-foreground",
+                  selected ? "bg-foreground text-background" : "bg-card text-muted-foreground",
                 )}
               >
                 {item}
@@ -139,7 +139,7 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
                 onClick={() => setIntervalDays(days)}
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-[13px] transition-colors",
-                  selected ? "bg-foreground text-background" : "bg-white text-muted-foreground",
+                  selected ? "bg-foreground text-background" : "bg-card text-muted-foreground",
                 )}
               >
                 {days === 1 ? "1 j" : `${days} j`}
@@ -160,7 +160,7 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
         <ul className="flex flex-col gap-3">
           {optimisticRoutines.map((routine) => (
             <li key={routine.id}>
-              <Card className="rounded-3xl bg-white py-0 shadow-[0_10px_30px_rgba(40,32,20,0.04)] ring-0">
+              <Card className="rounded-3xl bg-card py-0 shadow-[0_10px_30px_rgba(40,32,20,0.04)] ring-0 dark:shadow-none">
                 <CardContent className="px-5 py-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -184,7 +184,7 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
                       </span>
                     </div>
                     <Progress value={routine.value} aria-label={routine.statusLabel}>
-                      <ProgressTrack className="h-1.5 bg-[#eceae4]">
+                      <ProgressTrack className="h-1.5 bg-muted">
                         <ProgressIndicator className={gaugeClass[routine.tone]} />
                       </ProgressTrack>
                     </Progress>
@@ -194,7 +194,7 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
                     variant="outline"
                     disabled={pending}
                     onClick={() => complete(routine.id)}
-                    className="mt-4 h-11 rounded-full border-black/8 bg-transparent px-5"
+                    className="mt-4 h-11 rounded-full border-border bg-transparent px-5"
                   >
                     C&apos;est fait
                   </Button>

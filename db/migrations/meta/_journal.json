@@ -8,6 +8,20 @@
       "when": 1791399899169,
       "tag": "0000_petite_joystick",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791403778727,
+      "tag": "0001_sour_zuras",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791442675557,
+      "tag": "0002_flashy_demogoblin",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   check,
   index,
@@ -27,6 +28,9 @@ export const tasks = pgTable(
     category: categoryEnum("category").notNull(),
     isMicro: boolean("is_micro").notNull().default(false),
     isCompleted: boolean("is_completed").notNull().default(false),
+    parentId: uuid("parent_id").references((): AnyPgColumn => tasks.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
@@ -60,6 +64,15 @@ export const routines = pgTable(
     index("routines_last_completed_idx").on(table.lastCompletedAt),
   ],
 );
+
+export const loginAttempts = pgTable("login_attempts", {
+  key: text("key").primaryKey(),
+  failures: integer("failures").notNull().default(0),
+  windowStartedAt: timestamp("window_started_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+  lockedUntil: timestamp("locked_until", { withTimezone: true, mode: "date" }),
+});
 
 export type Task = typeof tasks.$inferSelect;
 export type Routine = typeof routines.$inferSelect;

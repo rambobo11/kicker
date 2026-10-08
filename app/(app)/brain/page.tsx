@@ -4,26 +4,27 @@ import { ScreenHeader } from "@/components/screen-header";
 import { TaskScreen } from "@/components/task-screen";
 import { getActiveTasks } from "@/lib/data/tasks";
 
-export default function QuickWinsPage() {
+export default function BrainDumpPage() {
   return (
     <>
-      <ScreenHeader title="Quick wins" hint="Moins de cinq minutes." />
+      <ScreenHeader title="Brain dump" hint="Ce qui traverse l'esprit." />
       <Suspense fallback={<ListSkeleton />}>
-        <QuickWins />
+        <BrainDump />
       </Suspense>
     </>
   );
 }
 
-async function QuickWins() {
-  const tasks = await getActiveTasks(true);
+async function BrainDump() {
+  const tasks = await getActiveTasks(false);
   return (
     <TaskScreen
       tasks={tasks}
-      microMode="locked"
-      placeholder="Une petite tâche…"
-      emptyTitle="Rien à vider."
-      emptyBody="Les tâches de moins de 5 minutes arrivent ici."
+      microMode="choice"
+      allowSplit
+      placeholder="Une idée, une tâche…"
+      emptyTitle="L'esprit est clair."
+      emptyBody="La prochaine idée a un endroit où atterrir."
     />
   );
 }

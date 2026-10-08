@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { redirect } from "next/navigation";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session";
 
 export async function isAuthenticated() {
   const secret = process.env.AUTH_SECRET;
@@ -10,7 +11,5 @@ export async function isAuthenticated() {
 }
 
 export async function requireUser() {
-  if (!(await isAuthenticated())) {
-    throw new Error("Non autorisé");
-  }
+  if (!(await isAuthenticated())) redirect("/login");
 }
