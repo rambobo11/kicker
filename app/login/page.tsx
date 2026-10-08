@@ -8,17 +8,19 @@ export default function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   return (
-    <main className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center px-6">
+    <main className="relative flex min-h-dvh w-full flex-col justify-center px-6">
       <div className="absolute top-6 right-6">
         <ThemeToggle />
       </div>
-      <p className="text-[13px] tracking-[0.18em] text-muted-foreground uppercase">Kicker</p>
-      <h1 className="mt-3 text-[2.4rem] leading-none font-semibold tracking-[-0.045em]">
-        Reprends le fil.
-      </h1>
-      <Suspense fallback={<LoginForm error={null} />}>
-        <LoginGate searchParams={searchParams} />
-      </Suspense>
+      <div className="mx-auto w-full max-w-lg lg:max-w-md">
+        <p className="text-[13px] tracking-[0.18em] text-muted-foreground uppercase">Kicker</p>
+        <h1 className="mt-3 text-[2.4rem] leading-none font-semibold tracking-[-0.045em] lg:text-[3rem]">
+          Reprends le fil.
+        </h1>
+        <Suspense fallback={<LoginForm error={null} />}>
+          <LoginGate searchParams={searchParams} />
+        </Suspense>
+      </div>
     </main>
   );
 }
