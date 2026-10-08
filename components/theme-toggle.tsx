@@ -30,13 +30,13 @@ export function ThemeToggle() {
   return (
     <Button
       type="button"
-      variant="ghost"
-      size="icon"
-      aria-label={dark ? "Mode clair" : "Mode sombre"}
+      variant="outline"
+      aria-label={dark ? "Passer en mode clair" : "Passer en mode sombre"}
       onClick={() => applyTheme(!dark)}
-      className="text-muted-foreground"
+      className="h-9 rounded-full border-border bg-card px-3 text-[13px] text-foreground"
     >
       {dark ? <Sun /> : <Moon />}
+      {dark ? "Clair" : "Sombre"}
     </Button>
   );
 }
