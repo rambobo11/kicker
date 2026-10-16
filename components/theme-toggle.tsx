@@ -24,14 +24,29 @@ function applyTheme(dark: boolean) {
   window.dispatchEvent(new Event("kicker-theme"));
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ variant = "pill" }: { variant?: "pill" | "bar" }) {
   const dark = useSyncExternalStore(subscribe, isDark, () => false);
+  const label = dark ? "Passer en mode clair" : "Passer en mode sombre";
+
+  if (variant === "bar") {
+    return (
+      <button
+        type="button"
+        aria-label={label}
+        onClick={() => applyTheme(!dark)}
+        className="flex h-8 items-center gap-2 rounded-lg px-2 text-[13px] text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      >
+        {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+        {dark ? "Clair" : "Sombre"}
+      </button>
+    );
+  }
 
   return (
     <Button
       type="button"
       variant="outline"
-      aria-label={dark ? "Passer en mode clair" : "Passer en mode sombre"}
+      aria-label={label}
       onClick={() => applyTheme(!dark)}
       className="h-9 rounded-full border-border bg-card px-3 text-[13px] text-foreground"
     >

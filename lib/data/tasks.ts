@@ -41,3 +41,13 @@ export async function getActiveTasks(microOnly: boolean): Promise<TaskView[]> {
 
   return rows.map(toTaskView);
 }
+
+export async function getCompletedTasks(): Promise<TaskView[]> {
+  const rows = await getDb()
+    .select()
+    .from(tasks)
+    .where(eq(tasks.isCompleted, true))
+    .orderBy(desc(tasks.createdAt));
+
+  return rows.map(toTaskView);
+}

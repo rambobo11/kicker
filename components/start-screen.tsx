@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition, type ReactNode } from "react";
 import { completeRoutine } from "@/app/actions/routines";
-import { completeTask } from "@/app/actions/tasks";
+import { completeTask, reopenTask, snoozeTask } from "@/app/actions/tasks";
+import { ContextPicker, inContext, useStartContext } from "@/components/context-picker";
+import { ParentDoneNotice } from "@/components/parent-done-notice";
+import { ScreenHeader } from "@/components/screen-header";
+import { SplitPane } from "@/components/split-pane";
 import { SplitTask } from "@/components/split-task";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,21 +24,32 @@ import { cn } from "cn";
 
 export function StartScreen({
   queue,
-  routine,
+  routines,
 }: {
   queue: TaskView[];
-  routine: RoutineView | null;
+  routines: RoutineView[];
 }) {
   const [skipped, setSkipped] = useState<string[]>([]);
+  const [focusId, setFocusId] = useState<string | null>(null);
   const [hiddenRoutineId, setHiddenRoutineId] = useState<string | null>(null);
+  const [closedParent, setClosedParent] = useState<{ id: string; title: string } | null>(null);
+  const [splitSignal, setSplitSignal] = useState(0);
   const [pending, startTransition] = useTransition();
   const [optimisticQueue, hideTask] = useOptimistic(queue, (current, id: string) =>
     current.filter((task) => task.id !== id),
   );
 
-  const remaining = optimisticQueue.filter((task) => !skipped.includes(task.id));
-  const current = remaining[0] ?? null;
-  const visibleRoutine = routine && routine.id !== hiddenRoutineId ? routine : null;
+  const context = useStartContext();
+  const scopedQueue = optimisticQueue.filter((task) => inContext(task.category, context));
+  const remaining = scopedQueue.filter((task) => !skipped.includes(task.id));
+  const current = remaining.find((task) => task.id === focusId) ?? remaining[0] ?? null;
+  const routine =
+    scopedQueue.some((task) => task.isMicro)
+      ? null
+      : (routines.find(
+          (item) => item.id !== hiddenRoutineId && inContext(item.category, context),
+        ) ?? null);
+  const visibleRoutine = routine;
   const routineIsQuiet = current !== null;
 
   function skip() {
@@ -43,13 +58,70 @@ export function StartScreen({
   }
 
   function completeCurrent() {
-    if (!current) return;
+    if (!current || pending) return;
     const id = current.id;
     startTransition(async () => {
       hideTask(id);
-      await completeTask(id);
+      const closed = await completeTask(id);
+      if (closed) setClosedParent(closed);
     });
   }
+
+  function snoozeCurrent() {
+    if (!current || pending) return;
+    const id = current.id;
+    startTransition(async () => {
+      hideTask(id);
+      await snoozeTask(id);
+    });
+  }
+
+  function undoClosedParent() {
+    if (!closedParent) return;
+    const id = closedParent.id;
+    setClosedParent(null);
+    startTransition(async () => {
+      await reopenTask(id);
+    });
+  }
+
+  const actionsRef = useRef({
+    completeCurrent,
+    skip,
+    canSplit: Boolean(current && !current.isMicro),
+  });
+  actionsRef.current = {
+    completeCurrent,
+    skip,
+    canSplit: Boolean(current && !current.isMicro),
+  };
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (window.innerWidth < 1024) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing || event.repeat) return;
+      if (isTyping(event.target)) return;
+
+      const key = event.key.toLowerCase();
+      if (event.key === " " || event.code === "Space") {
+        event.preventDefault();
+        actionsRef.current.completeCurrent();
+        return;
+      }
+      if (event.key === "ArrowRight" || key === "s") {
+        event.preventDefault();
+        actionsRef.current.skip();
+        return;
+      }
+      if (key === "d" && actionsRef.current.canSplit) {
+        event.preventDefault();
+        setSplitSignal((value) => value + 1);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   function finishRoutine() {
     if (!visibleRoutine) return;
@@ -60,8 +132,65 @@ export function StartScreen({
     });
   }
 
-  if (!current && optimisticQueue.length === 0 && !visibleRoutine) {
+  const rows = (
+    <ul className="mt-4">
+      {remaining.map((task) => (
+        <li key={task.id}>
+          <button
+            type="button"
+            onClick={() => setFocusId(task.id)}
+            className={cn(
+              "w-full rounded-xl px-3 py-3 text-left",
+              current?.id === task.id ? "bg-card" : "",
+            )}
+          >
+            <span className="block text-[15px] leading-snug">{task.title}</span>
+            <span className={cn("mt-0.5 block text-[13px]", categoryClass[task.category])}>
+              {task.category}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+
+  function frame(phone: ReactNode, detail: ReactNode) {
     return (
+      <>
+        <div className="lg:hidden">
+          <ContextPicker />
+          <ScreenHeader title="Par où je commence" hint="Une seule chose." />
+          {phone}
+        </div>
+        <div className="hidden lg:block lg:h-full">
+          <SplitPane
+            list={
+              <>
+                <ContextPicker />
+                <ScreenHeader title="Par où je commence" hint="Une seule chose." />
+                {rows}
+              </>
+            }
+            detail={detail}
+          />
+        </div>
+        <ParentDoneNotice
+          parent={closedParent}
+          onUndo={undoClosedParent}
+          onDismiss={() => setClosedParent(null)}
+        />
+      </>
+    );
+  }
+
+  if (!current && scopedQueue.length === 0 && !visibleRoutine) {
+    if (context !== "all") {
+      const quiet = (
+        <p className="px-1 pt-16 text-[15px] text-muted-foreground">Rien par ici.</p>
+      );
+      return frame(quiet, quiet);
+    }
+    const empty = (
       <div className="px-1 pt-16">
         <p className="text-[1.35rem] font-medium tracking-[-0.03em]">Rien en attente.</p>
         <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-muted-foreground">
@@ -75,10 +204,11 @@ export function StartScreen({
         </Link>
       </div>
     );
+    return frame(empty, empty);
   }
 
-  if (!current && optimisticQueue.length > 0) {
-    return (
+  if (!current && scopedQueue.length > 0) {
+    const passed = (
       <div className="flex flex-col gap-6">
         <div className="px-1 pt-10">
           <p className="text-[1.35rem] font-medium tracking-[-0.03em]">Tu les as toutes passées.</p>
@@ -100,9 +230,10 @@ export function StartScreen({
         ) : null}
       </div>
     );
+    return frame(passed, passed);
   }
 
-  return (
+  const focus = (
     <div className="flex flex-col gap-6">
       {current ? (
         <Card className="rounded-[1.75rem] bg-card py-0 shadow-[0_10px_30px_rgba(40,32,20,0.04)] ring-0 dark:shadow-none">
@@ -126,27 +257,35 @@ export function StartScreen({
             >
               C&apos;est fait
             </Button>
-            {remaining.length === 1 && optimisticQueue.length > 1 ? (
+            {remaining.length === 1 && scopedQueue.length > 1 ? (
               <p className="mt-4 text-center text-[13px] text-muted-foreground">
                 C&apos;est la seule qui reste.
               </p>
             ) : null}
-            {optimisticQueue.length > 1 ? (
+            <div className="mt-3 flex items-center justify-center gap-6">
+              {scopedQueue.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={skip}
+                  className="h-11 text-[14px] text-muted-foreground"
+                >
+                  Pas celle-là
+                </button>
+              ) : (
+                <p className="text-[13px] text-muted-foreground">C&apos;est la seule pour l&apos;instant.</p>
+              )}
               <button
                 type="button"
-                onClick={skip}
-                className="mt-3 h-11 w-full text-[14px] text-muted-foreground"
+                disabled={pending}
+                onClick={snoozeCurrent}
+                className="h-11 text-[14px] text-muted-foreground disabled:opacity-100"
               >
-                Pas celle-là
+                Pas aujourd&apos;hui
               </button>
-            ) : (
-              <p className="mt-4 text-center text-[13px] text-muted-foreground">
-                C&apos;est la seule pour l&apos;instant.
-              </p>
-            )}
+            </div>
             {current.isMicro ? null : (
               <div className="mt-6 border-t border-border pt-5">
-                <SplitTask key={current.id} taskId={current.id} />
+                <SplitTask key={current.id} taskId={current.id} openSignal={splitSignal} />
               </div>
             )}
           </CardContent>
@@ -163,6 +302,14 @@ export function StartScreen({
       ) : null}
     </div>
   );
+
+  return frame(focus, focus);
+}
+
+function isTyping(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return target.isContentEditable || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 }
 
 function RoutineCard({

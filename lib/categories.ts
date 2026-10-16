@@ -1,4 +1,4 @@
-export const CATEGORIES = ["Engie", "ESGI", "BBX", "Basket", "Base Camp"] as const;
+export const CATEGORIES = ["Engie", "ESGI", "BBX", "Basket", "Base Camp", "Home", "Other"] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 
@@ -20,4 +20,6 @@ export const categoryClass: Record<Category, string> = {
   BBX: "text-[#9a7040] dark:text-[#e4c4a0]",
   Basket: "text-[#c2613a] dark:text-[#f0b098]",
   "Base Camp": "text-[#6e6a64] dark:text-[#c4bfb8]",
+  Home: "text-[#3f7a62] dark:text-[#a8d4c0]",
+  Other: "text-[#8a6278] dark:text-[#e4c0d2]",
 };

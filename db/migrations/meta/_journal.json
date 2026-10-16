@@ -22,6 +22,27 @@
       "when": 1791442675557,
       "tag": "0002_flashy_demogoblin",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791459334916,
+      "tag": "0003_misty_energizer",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791465048880,
+      "tag": "0004_good_slapstick",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791687033485,
+      "tag": "0005_little_cassandra_nova",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,8 @@ export const categoryEnum = pgEnum("category", [
   "BBX",
   "Basket",
   "Base Camp",
+  "Home",
+  "Other",
 ]);
 
 export const tasks = pgTable(
@@ -34,6 +36,7 @@ export const tasks = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .notNull()
       .defaultNow(),
+    snoozedUntil: timestamp("snoozed_until", { withTimezone: true, mode: "date" }),
   },
   (table) => [
     check("tasks_title_not_blank", sql`char_length(btrim(${table.title})) > 0`),

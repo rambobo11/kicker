@@ -3,6 +3,8 @@
 import { Plus } from "lucide-react";
 import { useOptimistic, useState, useTransition } from "react";
 import { addRoutine, completeRoutine } from "@/app/actions/routines";
+import { ScreenHeader } from "@/components/screen-header";
+import { SplitPane } from "@/components/split-pane";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +29,7 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
   const [category, setCategory] = useState<Category>("Base Camp");
   const [intervalDays, setIntervalDays] = useState<IntervalDays>(7);
   const [pending, startTransition] = useTransition();
+  const [pickedId, setPickedId] = useState<string | null>(null);
   const [optimisticRoutines, updateRoutines] = useOptimistic(
     routines,
     (
@@ -80,8 +83,14 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
     });
   }
 
+  const selected =
+    optimisticRoutines.find((routine) => routine.id === pickedId) ?? optimisticRoutines[0] ?? null;
+
   return (
+    <SplitPane
+      list={
     <div>
+      <ScreenHeader title="Routines" hint="L'entretien, sans date limite." />
       <form
         className="mb-8"
         onSubmit={(event) => {
@@ -157,7 +166,27 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <>
+        <ul className="hidden lg:block">
+          {optimisticRoutines.map((routine) => (
+            <li key={routine.id}>
+              <button
+                type="button"
+                onClick={() => setPickedId(routine.id)}
+                className={cn(
+                  "w-full rounded-xl px-3 py-3 text-left",
+                  selected?.id === routine.id ? "bg-card" : "",
+                )}
+              >
+                <span className="block text-[15px] leading-snug">{routine.title}</span>
+                <span className={cn("mt-0.5 block text-[13px]", gaugeTextClass[routine.tone])}>
+                  {routine.statusLabel}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <ul className="flex flex-col gap-3 lg:hidden">
           {optimisticRoutines.map((routine) => (
             <li key={routine.id}>
               <Card className="rounded-3xl bg-card py-0 shadow-[0_10px_30px_rgba(40,32,20,0.04)] ring-0 dark:shadow-none">
@@ -203,8 +232,46 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
             </li>
           ))}
         </ul>
+        </>
       )}
     </div>
+      }
+      detail={
+        selected ? (
+          <div className="max-w-xl">
+            <p className={cn("text-[13px]", categoryClass[selected.category])}>{selected.category}</p>
+            <h2 className="mt-4 text-[2.2rem] leading-[1.15] font-medium tracking-[-0.04em]">
+              {selected.title}
+            </h2>
+            <p className="mt-3 text-[15px] text-muted-foreground">
+              {selected.elapsedLabel}
+              <span className="px-1.5">·</span>
+              {selected.intervalLabel}
+            </p>
+            <div className="mt-8">
+              <span className={cn("text-[13px] font-medium", gaugeTextClass[selected.tone])}>
+                {selected.statusLabel}
+              </span>
+              <Progress value={selected.value} aria-label={selected.statusLabel} className="mt-2">
+                <ProgressTrack className="h-1.5 bg-muted">
+                  <ProgressIndicator className={gaugeClass[selected.tone]} />
+                </ProgressTrack>
+              </Progress>
+            </div>
+            <Button
+              type="button"
+              disabled={pending}
+              onClick={() => complete(selected.id)}
+              className="mt-8 h-11 rounded-full px-6"
+            >
+              C&apos;est fait
+            </Button>
+          </div>
+        ) : (
+          <p className="pt-16 text-[15px] text-muted-foreground">Sélectionne une routine.</p>
+        )
+      }
+    />
   );
 }
 

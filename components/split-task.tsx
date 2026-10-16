@@ -1,17 +1,30 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { splitTask } from "@/app/actions/tasks";
 import { Input } from "@/components/ui/input";
 import { cn } from "cn";
 
 const PLACEHOLDERS = ["Le premier petit pas", "Ensuite", "Un troisième, si tu veux"];
 
-export function SplitTask({ taskId }: { taskId: string }) {
+export function SplitTask({ taskId, openSignal = 0 }: { taskId: string; openSignal?: number }) {
   const [open, setOpen] = useState(false);
   const [steps, setSteps] = useState(["", "", ""]);
   const [pending, startTransition] = useTransition();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const firstRef = useRef<HTMLInputElement>(null);
   const ready = steps.filter((step) => step.trim().length > 0).length >= 2;
+
+  useEffect(() => {
+    if (!openSignal) return;
+    if (!rootRef.current || rootRef.current.getClientRects().length === 0) return;
+    setOpen(true);
+  }, [openSignal]);
+
+  useEffect(() => {
+    if (!open) return;
+    firstRef.current?.focus();
+  }, [open, openSignal]);
 
   function submit() {
     if (!ready) return;
@@ -25,17 +38,20 @@ export function SplitTask({ taskId }: { taskId: string }) {
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-[13px] text-muted-foreground"
-      >
-        Découper
-      </button>
+      <div ref={rootRef}>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-[13px] text-muted-foreground"
+        >
+          Découper
+        </button>
+      </div>
     );
   }
 
   return (
+    <div ref={rootRef}>
     <form
       className="flex flex-col gap-2"
       onSubmit={(event) => {
@@ -52,6 +68,7 @@ export function SplitTask({ taskId }: { taskId: string }) {
               current.map((value, itemIndex) => (itemIndex === index ? event.target.value : value)),
             )
           }
+          ref={index === 0 ? firstRef : undefined}
           placeholder={PLACEHOLDERS[index]}
           aria-label={PLACEHOLDERS[index]}
           maxLength={180}
@@ -81,5 +98,6 @@ export function SplitTask({ taskId }: { taskId: string }) {
         </button>
       </div>
     </form>
+    </div>
   );
 }

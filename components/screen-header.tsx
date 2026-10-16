@@ -10,7 +10,7 @@ export function ScreenHeader({ title, hint }: { title: string; hint: string }) {
         <h1 className="text-[2rem] leading-none font-semibold tracking-[-0.04em]">{title}</h1>
         <p className="mt-2.5 text-[15px] text-muted-foreground">{hint}</p>
       </div>
-      <div className="mt-0.5 flex items-center">
+      <div className="mt-0.5 flex items-center lg:hidden">
         <ThemeToggle />
         <form action={logout}>
           <Button

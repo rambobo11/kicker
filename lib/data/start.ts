@@ -30,9 +30,13 @@ function asList<T>(value: T[] | string | null): T[] {
 
 export async function getStartScreen(): Promise<{
   queue: TaskView[];
-  routine: RoutineView | null;
+  routines: RoutineView[];
 }> {
-  const [row] = await getDb().execute<{ tasks: TaskRow[] | string | null; routines: RoutineRow[] | string | null }>(sql`
+  const [row] = await getDb().execute<{
+    tasks: TaskRow[] | string | null;
+    blocking_parents: string[] | string | null;
+    routines: RoutineRow[] | string | null;
+  }>(sql`
     select
       coalesce((
         select json_agg(json_build_object(
@@ -45,7 +49,14 @@ export async function getStartScreen(): Promise<{
         ))
         from tasks
         where is_completed = false
+          and (snoozed_until is null or snoozed_until <= now())
       ), '[]'::json) as tasks,
+      coalesce((
+        select json_agg(distinct parent_id)
+        from tasks
+        where is_completed = false
+          and parent_id is not null
+      ), '[]'::json) as blocking_parents,
       coalesce((
         select json_agg(json_build_object(
           'id', id,
@@ -58,16 +69,18 @@ export async function getStartScreen(): Promise<{
       ), '[]'::json) as routines
   `);
 
-  const queue = asList<TaskRow>(row?.tasks)
+  const openTasks = asList<TaskRow>(row?.tasks);
+  const blockedParentIds = new Set([
+    ...openTasks.flatMap((task) => (task.parentId ? [task.parentId] : [])),
+    ...asList<string>(row?.blocking_parents),
+  ]);
+  const queue = openTasks
+    .filter((task) => !blockedParentIds.has(task.id))
     .sort((left, right) => {
       if (left.isMicro !== right.isMicro) return left.isMicro ? -1 : 1;
       return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
     })
     .map((task) => toTaskView(task));
-
-  if (queue.some((task) => task.isMicro)) {
-    return { queue, routine: null };
-  }
 
   const now = Date.now();
   const routineList = asList<RoutineRow>(row?.routines)
@@ -93,6 +106,6 @@ export async function getStartScreen(): Promise<{
 
   return {
     queue,
-    routine: routineList.find((routine) => routine.tone === "overdue") ?? null,
+    routines: routineList.filter((routine) => routine.tone === "overdue"),
   };
 }

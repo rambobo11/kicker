@@ -1,15 +1,18 @@
 "use client";
 
-import { Inbox, Play, RefreshCcw, Zap } from "lucide-react";
+import { Inbox, Lock, RefreshCcw, Star, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/actions/auth";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { cn } from "cn";
 
 const items = [
-  { href: "/", label: "Start", icon: Play },
-  { href: "/brain", label: "Brain", icon: Inbox },
-  { href: "/quick-wins", label: "Wins", icon: Zap },
-  { href: "/routines", label: "Routines", icon: RefreshCcw },
+  { href: "/", short: "Start", label: "Start", icon: Star, iconClass: "text-[#c4922a]" },
+  { href: "/brain", short: "Brain", label: "Brain dump", icon: Inbox, iconClass: "text-[#3b7fc4]" },
+  { href: "/quick-wins", short: "Wins", label: "Quick wins", icon: Zap, iconClass: "text-[#3d8f62]" },
+  { href: "/routines", short: "Routines", label: "Routines", icon: RefreshCcw, iconClass: "text-[#6d8a45]" },
 ];
 
 function useActiveHref() {
@@ -21,9 +24,8 @@ export function SideNav() {
   const isActive = useActiveHref();
 
   return (
-    <aside className="sticky top-0 hidden h-dvh flex-col border-r border-border px-4 py-8 lg:flex">
-      <p className="px-3 text-[13px] tracking-[0.18em] text-muted-foreground uppercase">Kicker</p>
-      <nav className="mt-8 flex flex-col gap-1" aria-label="Sections">
+    <aside className="hidden h-dvh flex-col bg-sidebar text-sidebar-foreground lg:flex">
+      <nav className="flex flex-1 flex-col gap-0.5 px-3 pt-4" aria-label="Sections">
         {items.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;
@@ -34,16 +36,32 @@ export function SideNav() {
               prefetch={false}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[15px] transition-colors",
-                active ? "bg-card text-foreground" : "text-muted-foreground",
+                "flex h-8 items-center gap-2.5 rounded-lg px-2 text-[14px] transition-colors",
+                active
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/70",
               )}
             >
-              <Icon className={cn("size-5", active ? "stroke-[2.25]" : "stroke-[1.75]")} />
+              <Icon className={cn("size-4 shrink-0", item.iconClass)} strokeWidth={2} />
               {item.label}
             </Link>
           );
         })}
       </nav>
+      <div className="flex items-center justify-between border-t border-sidebar-border px-2 py-2">
+        <ThemeToggle variant="bar" />
+        <form action={logout}>
+          <Button
+            type="submit"
+            variant="ghost"
+            size="icon"
+            aria-label="Verrouiller"
+            className="size-8 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <Lock className="size-4" />
+          </Button>
+        </form>
+      </div>
     </aside>
   );
 }
@@ -72,7 +90,7 @@ export function BottomNav() {
               )}
             >
               <Icon className={cn("size-5", active ? "stroke-[2.25]" : "stroke-[1.75]")} />
-              {item.label}
+              {item.short}
             </Link>
           );
         })}
