@@ -16,6 +16,7 @@ import {
   ProgressIndicator,
   ProgressTrack,
 } from "@/components/ui/progress";
+import { isApartmentPaused, useTravelMode } from "@/components/travel-mode";
 import { categoryClass } from "@/lib/categories";
 import { gaugeClass, gaugeTextClass } from "@/lib/gauge";
 import type { RoutineView } from "@/lib/data/routines";
@@ -40,6 +41,7 @@ export function StartScreen({
   );
 
   const context = useStartContext();
+  const traveling = useTravelMode();
   const scopedQueue = optimisticQueue.filter((task) => inContext(task.category, context));
   const remaining = scopedQueue.filter((task) => !skipped.includes(task.id));
   const current = remaining.find((task) => task.id === focusId) ?? remaining[0] ?? null;
@@ -47,7 +49,10 @@ export function StartScreen({
     scopedQueue.some((task) => task.isMicro)
       ? null
       : (routines.find(
-          (item) => item.id !== hiddenRoutineId && inContext(item.category, context),
+          (item) =>
+            item.id !== hiddenRoutineId &&
+            inContext(item.category, context) &&
+            !isApartmentPaused(item.category, traveling),
         ) ?? null);
   const visibleRoutine = routine;
   const routineIsQuiet = current !== null;
@@ -144,7 +149,9 @@ export function StartScreen({
               current?.id === task.id ? "bg-card" : "",
             )}
           >
-            <span className="block text-[15px] leading-snug">{task.title}</span>
+            <span className={cn("block text-[15px] leading-snug", categoryClass[task.category])}>
+              {task.title}
+            </span>
             <span className={cn("mt-0.5 block text-[13px]", categoryClass[task.category])}>
               {task.category}
             </span>
@@ -246,7 +253,12 @@ export function StartScreen({
                 <span className="text-[12px] text-muted-foreground">5 min</span>
               ) : null}
             </div>
-            <p className="mt-5 text-[1.65rem] leading-[1.15] font-medium tracking-[-0.04em]">
+            <p
+              className={cn(
+                "mt-5 text-[1.65rem] leading-[1.15] font-medium tracking-[-0.04em]",
+                categoryClass[current.category],
+              )}
+            >
               {current.title}
             </p>
             <Button

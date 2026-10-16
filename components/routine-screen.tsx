@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useOptimistic, useState, useTransition } from "react";
 import { addRoutine, completeRoutine } from "@/app/actions/routines";
 import { ScreenHeader } from "@/components/screen-header";
+import { isApartmentPaused, TravelToggle, useTravelMode } from "@/components/travel-mode";
 import { SplitPane } from "@/components/split-pane";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -83,14 +84,27 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
     });
   }
 
-  const selected =
-    optimisticRoutines.find((routine) => routine.id === pickedId) ?? optimisticRoutines[0] ?? null;
+  const traveling = useTravelMode();
+  const visible = optimisticRoutines
+    .map((routine) =>
+      isApartmentPaused(routine.category, traveling)
+        ? { ...routine, statusLabel: "En pause", elapsedLabel: "En voyage", value: 8, paused: true }
+        : { ...routine, paused: false },
+    )
+    .sort((left, right) => {
+      if (left.paused !== right.paused) return left.paused ? 1 : -1;
+      return toneRank(left.tone) - toneRank(right.tone);
+    });
+  const selected = visible.find((routine) => routine.id === pickedId) ?? visible[0] ?? null;
 
   return (
     <SplitPane
       list={
     <div>
       <ScreenHeader title="Routines" hint="L'entretien, sans date limite." />
+      <div className="mb-6 flex justify-end">
+        <TravelToggle />
+      </div>
       <form
         className="mb-8"
         onSubmit={(event) => {
@@ -158,7 +172,7 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
         </div>
       </form>
 
-      {optimisticRoutines.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="px-1 pt-16">
           <p className="text-[1.35rem] font-medium tracking-[-0.03em]">Rien à entretenir.</p>
           <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-muted-foreground">
@@ -168,7 +182,7 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
       ) : (
         <>
         <ul className="hidden lg:block">
-          {optimisticRoutines.map((routine) => (
+          {visible.map((routine) => (
             <li key={routine.id}>
               <button
                 type="button"
@@ -178,8 +192,10 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
                   selected?.id === routine.id ? "bg-card" : "",
                 )}
               >
-                <span className="block text-[15px] leading-snug">{routine.title}</span>
-                <span className={cn("mt-0.5 block text-[13px]", gaugeTextClass[routine.tone])}>
+                <span className={cn("block text-[15px] leading-snug", categoryClass[routine.category])}>
+                  {routine.title}
+                </span>
+                <span className={cn("mt-0.5 block text-[13px]", routine.paused ? "text-muted-foreground" : gaugeTextClass[routine.tone])}>
                   {routine.statusLabel}
                 </span>
               </button>
@@ -187,13 +203,18 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
           ))}
         </ul>
         <ul className="flex flex-col gap-3 lg:hidden">
-          {optimisticRoutines.map((routine) => (
+          {visible.map((routine) => (
             <li key={routine.id}>
               <Card className="rounded-3xl bg-card py-0 shadow-[0_10px_30px_rgba(40,32,20,0.04)] ring-0 dark:shadow-none">
                 <CardContent className="px-5 py-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-[17px] leading-snug font-medium tracking-[-0.02em]">
+                      <p
+                        className={cn(
+                          "text-[17px] leading-snug font-medium tracking-[-0.02em]",
+                          categoryClass[routine.category],
+                        )}
+                      >
                         {routine.title}
                       </p>
                       <p className="mt-1 text-[13px] text-muted-foreground">
@@ -208,13 +229,20 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
                   </div>
                   <div className="mt-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className={cn("text-[12px] font-medium", gaugeTextClass[routine.tone])}>
+                      <span
+                        className={cn(
+                          "text-[12px] font-medium",
+                          routine.paused ? "text-muted-foreground" : gaugeTextClass[routine.tone],
+                        )}
+                      >
                         {routine.statusLabel}
                       </span>
                     </div>
                     <Progress value={routine.value} aria-label={routine.statusLabel}>
                       <ProgressTrack className="h-1.5 bg-muted">
-                        <ProgressIndicator className={gaugeClass[routine.tone]} />
+                        <ProgressIndicator
+                          className={routine.paused ? "bg-muted-foreground/30" : gaugeClass[routine.tone]}
+                        />
                       </ProgressTrack>
                     </Progress>
                   </div>
@@ -240,7 +268,12 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
         selected ? (
           <div className="max-w-xl">
             <p className={cn("text-[13px]", categoryClass[selected.category])}>{selected.category}</p>
-            <h2 className="mt-4 text-[2.2rem] leading-[1.15] font-medium tracking-[-0.04em]">
+            <h2
+              className={cn(
+                "mt-4 text-[2.2rem] leading-[1.15] font-medium tracking-[-0.04em]",
+                categoryClass[selected.category],
+              )}
+            >
               {selected.title}
             </h2>
             <p className="mt-3 text-[15px] text-muted-foreground">
@@ -249,12 +282,19 @@ export function RoutineScreen({ routines }: { routines: RoutineView[] }) {
               {selected.intervalLabel}
             </p>
             <div className="mt-8">
-              <span className={cn("text-[13px] font-medium", gaugeTextClass[selected.tone])}>
+              <span
+                className={cn(
+                  "text-[13px] font-medium",
+                  selected.paused ? "text-muted-foreground" : gaugeTextClass[selected.tone],
+                )}
+              >
                 {selected.statusLabel}
               </span>
               <Progress value={selected.value} aria-label={selected.statusLabel} className="mt-2">
                 <ProgressTrack className="h-1.5 bg-muted">
-                  <ProgressIndicator className={gaugeClass[selected.tone]} />
+                  <ProgressIndicator
+                    className={selected.paused ? "bg-muted-foreground/30" : gaugeClass[selected.tone]}
+                  />
                 </ProgressTrack>
               </Progress>
             </div>

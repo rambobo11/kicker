@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { TravelToggle } from "@/components/travel-mode";
 import type { Category } from "@/lib/categories";
 import { cn } from "cn";
 
@@ -52,22 +53,25 @@ export function ContextPicker() {
   const context = useStartContext();
 
   return (
-    <div className="mb-6 flex items-center gap-4" role="radiogroup" aria-label="Contexte">
-      {OPTIONS.map((option) => {
-        const selected = context === option.id;
-        return (
-          <button
-            key={option.id}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => selectContext(option.id)}
-            className={cn("text-[13px]", selected ? "text-foreground" : "text-muted-foreground")}
-          >
-            {option.label}
-          </button>
-        );
-      })}
+    <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-4" role="radiogroup" aria-label="Contexte">
+        {OPTIONS.map((option) => {
+          const selected = context === option.id;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => selectContext(option.id)}
+              className={cn("text-[13px]", selected ? "text-foreground" : "text-muted-foreground")}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      <TravelToggle />
     </div>
   );
 }

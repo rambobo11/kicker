@@ -226,7 +226,14 @@ export function TaskScreen({
                   onClick={() => complete(task.id)}
                   className="min-w-0 flex-1 text-left disabled:opacity-100 lg:hidden"
                 >
-                  <span className="block text-[17px] leading-snug tracking-[-0.01em]">{task.title}</span>
+                  <span
+                    className={cn(
+                      "block text-[17px] leading-snug tracking-[-0.01em]",
+                      categoryClass[task.category],
+                    )}
+                  >
+                    {task.title}
+                  </span>
                   <span className={cn("mt-0.5 block text-[13px]", categoryClass[task.category])}>
                     {task.category}
                     {task.isMicro ? " · 5 min" : ""}
@@ -237,7 +244,9 @@ export function TaskScreen({
                   onClick={() => setPickedId(task.id)}
                   className="hidden min-w-0 flex-1 text-left lg:block"
                 >
-                  <span className="block text-[15px] leading-snug">{task.title}</span>
+                  <span className={cn("block text-[15px] leading-snug", categoryClass[task.category])}>
+                    {task.title}
+                  </span>
                   <span className={cn("mt-0.5 block text-[13px]", categoryClass[task.category])}>
                     {task.category}
                     {task.isMicro ? " · 5 min" : ""}
@@ -305,7 +314,12 @@ export function TaskScreen({
         ) : selected ? (
           <div>
             <p className={cn("text-[13px]", categoryClass[selected.category])}>{selected.category}</p>
-            <h2 className="mt-4 max-w-xl text-[2.2rem] leading-[1.15] font-medium tracking-[-0.04em]">
+            <h2
+              className={cn(
+                "mt-4 max-w-xl text-[2.2rem] leading-[1.15] font-medium tracking-[-0.04em]",
+                categoryClass[selected.category],
+              )}
+            >
               {selected.title}
             </h2>
             {selected.isMicro ? <p className="mt-3 text-[14px] text-muted-foreground">5 min</p> : null}

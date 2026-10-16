@@ -1,8 +1,7 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
-import { Button } from "@/components/ui/button";
+import { cn } from "cn";
 
 const STORAGE_KEY = "kicker-theme";
 
@@ -26,32 +25,46 @@ function applyTheme(dark: boolean) {
 
 export function ThemeToggle({ variant = "pill" }: { variant?: "pill" | "bar" }) {
   const dark = useSyncExternalStore(subscribe, isDark, () => false);
-  const label = dark ? "Passer en mode clair" : "Passer en mode sombre";
-
-  if (variant === "bar") {
-    return (
-      <button
-        type="button"
-        aria-label={label}
-        onClick={() => applyTheme(!dark)}
-        className="flex h-8 items-center gap-2 rounded-lg px-2 text-[13px] text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-      >
-        {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        {dark ? "Clair" : "Sombre"}
-      </button>
-    );
-  }
+  const onBar = variant === "bar";
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      aria-label={label}
-      onClick={() => applyTheme(!dark)}
-      className="h-9 rounded-full border-border bg-card px-3 text-[13px] text-foreground"
-    >
-      {dark ? <Sun /> : <Moon />}
-      {dark ? "Clair" : "Sombre"}
-    </Button>
+    <div className="flex items-center gap-3" role="radiogroup" aria-label="Apparence">
+      <button
+        type="button"
+        role="radio"
+        aria-checked={!dark}
+        onClick={() => applyTheme(false)}
+        className={cn(
+          "text-[13px]",
+          !dark
+            ? onBar
+              ? "text-sidebar-foreground"
+              : "text-foreground"
+            : onBar
+              ? "text-sidebar-foreground/45"
+              : "text-muted-foreground",
+        )}
+      >
+        Clair
+      </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={dark}
+        onClick={() => applyTheme(true)}
+        className={cn(
+          "text-[13px]",
+          dark
+            ? onBar
+              ? "text-sidebar-foreground"
+              : "text-foreground"
+            : onBar
+              ? "text-sidebar-foreground/45"
+              : "text-muted-foreground",
+        )}
+      >
+        Sombre
+      </button>
+    </div>
   );
 }
