@@ -1,7 +1,8 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "drizzle-orm";
 import type { Category } from "@/lib/categories";
-import { getDb } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import type { RoutineView } from "@/lib/data/routines";
 import { toTaskView, type TaskView } from "@/lib/data/tasks";
 import { routineGauge, urgencyScore } from "@/lib/gauge";
@@ -32,7 +33,12 @@ export async function getStartScreen(): Promise<{
   queue: TaskView[];
   routines: RoutineView[];
 }> {
-  const [row] = await getDb().execute<{
+  "use cache";
+  cacheTag("tasks", "routines");
+  cacheLife({ stale: 0, revalidate: 60, expire: 3600 });
+
+  const [row] = await withDb((db) =>
+    db.execute<{
     tasks: TaskRow[] | string | null;
     blocking_parents: string[] | string | null;
     routines: RoutineRow[] | string | null;
@@ -67,7 +73,8 @@ export async function getStartScreen(): Promise<{
         ))
         from routines
       ), '[]'::json) as routines
-  `);
+  `),
+  );
 
   const openTasks = asList<TaskRow>(row?.tasks);
   const blockedParentIds = new Set([
@@ -94,18 +101,20 @@ export async function getStartScreen(): Promise<{
         intervalDays: routine.intervalDays,
         intervalLabel:
           routine.intervalDays === 1 ? "Tous les jours" : `Tous les ${routine.intervalDays} jours`,
-        lastCompletedAt,
+        sortAt: lastCompletedAt,
         ...gauge,
       };
     })
     .sort(
       (left, right) =>
-        urgencyScore(right.lastCompletedAt, right.intervalDays, now) -
-        urgencyScore(left.lastCompletedAt, left.intervalDays, now),
+        urgencyScore(right.sortAt, right.intervalDays, now) -
+        urgencyScore(left.sortAt, left.intervalDays, now),
     );
 
   return {
     queue,
-    routines: routineList.filter((routine) => routine.tone === "overdue"),
+    routines: routineList
+      .filter((routine) => routine.tone === "overdue")
+      .map(({ sortAt: _sortAt, ...routine }) => routine),
   };
 }

@@ -1,7 +1,8 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { ListSkeleton } from "@/components/list-skeleton";
 import { TaskScreen } from "@/components/task-screen";
-import { getActiveTasks, getCompletedTasks } from "@/lib/data/tasks";
+import { getBrainTasks } from "@/lib/data/tasks";
 
 export default function BrainDumpPage() {
   return (
@@ -12,7 +13,8 @@ export default function BrainDumpPage() {
 }
 
 async function BrainDump() {
-  const [tasks, done] = await Promise.all([getActiveTasks(false), getCompletedTasks()]);
+  await connection();
+  const { tasks, done } = await getBrainTasks();
   return (
     <TaskScreen
       tasks={tasks}

@@ -1,7 +1,8 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { routines } from "@/db/schema";
 import type { Category } from "@/lib/categories";
-import { getDb } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { routineGauge, urgencyScore } from "@/lib/gauge";
 
 export type RoutineView = {
@@ -21,7 +22,11 @@ function intervalLabel(intervalDays: number) {
 }
 
 export async function getRoutines(): Promise<RoutineView[]> {
-  const rows = await getDb().select().from(routines);
+  "use cache";
+  cacheTag("routines");
+  cacheLife({ stale: 0, revalidate: 60, expire: 3600 });
+
+  const rows = await withDb((db) => db.select().from(routines));
   const now = Date.now();
 
   return rows
