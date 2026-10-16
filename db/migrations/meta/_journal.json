@@ -43,6 +43,13 @@
       "when": 1791687033485,
       "tag": "0005_little_cassandra_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792179090846,
+      "tag": "0006_drop_home_category",
+      "breakpoints": true
     }
   ]
 }

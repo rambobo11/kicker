@@ -18,7 +18,6 @@ export const categoryEnum = pgEnum("category", [
   "BBX",
   "Basket",
   "Base Camp",
-  "Home",
   "Other",
 ]);
 
